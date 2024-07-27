@@ -21,6 +21,8 @@ def create_file():
             additional_lines += 1
     
     print('Additional lines added: ' + str(additional_lines))
-
+    approximation_error = (additional_lines / num_lines) * 100
+    print('Approximation error: ' + str(round(approximation_error, 3)) + '%')
+        
 create_file()
 print('File created successfully!')
