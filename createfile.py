@@ -12,7 +12,7 @@ def create_file():
     # Ensure the file is exactly 256 MB
     with open('unsorted.txt', 'a') as file:
         while file.tell() < target_size:
-            file.write('1\n')
+            file.write(str(random.randint(1, 1000000)) + '\n')
 
 create_file()
 print('File created successfully!')
