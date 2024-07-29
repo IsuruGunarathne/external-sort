@@ -113,7 +113,18 @@ def split_file():
                 print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
-                print_memory_usage()    
+                print_memory_usage()
+    
+    # Write any remaining lines in the last chunk
+    if chunk:
+        with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
+            for number in chunk:
+                chunk_file.write(str(number) + '\n')
+        chunk.clear()
+        print('Chunk ' + str(chunk_count) + ' stored!')
+        chunk_count += 1
+        
+        print_memory_usage()
 
     # stopping the library
     tracemalloc.stop()
@@ -172,8 +183,9 @@ if __name__ == '__main__':
     print('Merging sorted chunks...')
 
     sorted_files = [f'chunk{i}.txt' for i in range(n_chunks)]
+    print(sorted_files)
     k_way_merge(sorted_files, 'sorted.txt')
-    delete_files(8)
+    delete_files(n_chunks)
 
     end_time = time.time()
     print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
