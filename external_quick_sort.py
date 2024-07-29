@@ -26,7 +26,7 @@ def print_memory_usage():
     print(f"Current memory usage: {current_mb:.2f} MB")
     print(f"Peak memory usage: {peak_mb:.2f} MB")
 
-def split_sort_file():
+def split_file():
     # starting the monitoring
     tracemalloc.start()
 
@@ -44,7 +44,7 @@ def split_sort_file():
                     for number in chunk:
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
-                print('Chunk ' + str(chunk_count) + ' sorted and stored!')
+                print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
                 print_memory_usage()
@@ -59,8 +59,8 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # split file into chunks and sort individual chunks
-    split_sort_file()
-    print('File split and chunks sorted successfully!')
+    split_file()
+    print('File split and chunks stored successfully!')
 
     # merge_files()
     # print('File sorted successfully!')
