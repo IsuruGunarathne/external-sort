@@ -15,6 +15,16 @@ chunk_size = 16 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 
+def print_memory_usage():
+    current, peak = tracemalloc.get_traced_memory()
+
+    # Convert to MB
+    current_mb = current / 1024 / 1024
+    peak_mb = peak / 1024 / 1024
+
+    # Print the results in MB
+    print(f"Current memory usage: {current_mb:.2f} MB")
+    print(f"Peak memory usage: {peak_mb:.2f} MB")
 
 def split_sort_file():
     # starting the monitoring
@@ -22,17 +32,14 @@ def split_sort_file():
 
     print('Splitting file into chunks and sorting...')
     
-    # print memory usage at start
-    current, peak = tracemalloc.get_traced_memory()
-    print(f"Initial memory usage: {current / 1024 / 1024} MB")
-    print(f"Peak memory usage: {peak / 1024 / 1024} MB")
+    print_memory_usage()
     
     chunk_count = 0
     with open('unsorted.txt', 'r') as file:
         for line in file:
             chunk.append(int(line))
             if len(chunk) == number_of_lines_per_chunk:
-                quicksort(chunk)
+                # quicksort(chunk)
                 with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
                     for number in chunk:
                         chunk_file.write(str(number) + '\n')
@@ -40,16 +47,7 @@ def split_sort_file():
                 print('Chunk ' + str(chunk_count) + ' sorted and stored!')
                 chunk_count += 1
 
-                # Get the current and peak memory usage
-                current, peak = tracemalloc.get_traced_memory()
-
-                # Convert to MB
-                current_mb = current / 1024 / 1024
-                peak_mb = peak / 1024 / 1024
-
-                # Print the results in MB
-                print(f"Current memory usage: {current_mb:.2f} MB")
-                print(f"Peak memory usage: {peak_mb:.2f} MB")
+                print_memory_usage()
     
 
     # stopping the library
