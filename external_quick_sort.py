@@ -1,3 +1,6 @@
+import time
+from memory_profiler import profile
+
 def quicksort(arr):
     if len(arr) <= 1:
         return arr
@@ -7,17 +10,36 @@ def quicksort(arr):
     right = [x for x in arr if x > pivot]
     return quicksort(left) + middle + quicksort(right)
 
-RAM = 16  # 16 MB
-chunk_size = 4  # 4 MB
+chunk_size = 16 # 16 MB
 chunk = []
+number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 
-def split_file():
+@profile
+def split_sort_file():
+    chunk_count = 0
     with open('unsorted.txt', 'r') as file:
         for line in file:
             chunk.append(int(line))
-            if file.tell() % (chunk_size * 1024 * 1024) == 0:
-                # chunk.sort()
-                with open('chunk' + str(file.tell() // (chunk_size * 1024 * 1024)) + '.txt', 'w') as chunk_file:
+            if len(chunk) == number_of_lines_per_chunk:
+                quicksort(chunk)
+                with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
                     for number in chunk:
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
+                print('Chunk ' + str(chunk_count) + ' sorted and stored!')
+                chunk_count += 1
+
+
+if __name__ == '__main__':
+    # record the start time
+    start_time = time.time()
+
+    # split file into chunks and sort individual chunks
+    split_sort_file()
+    print('File split and chunks sorted successfully!')
+
+    # merge_files()
+    # print('File sorted successfully!')
+
+    end_time = time.time()
+    print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
