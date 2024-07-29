@@ -1,5 +1,5 @@
 import time
-from memory_profiler import profile
+import tracemalloc
 
 def quicksort(arr):
     if len(arr) <= 1:
@@ -10,12 +10,23 @@ def quicksort(arr):
     right = [x for x in arr if x > pivot]
     return quicksort(left) + middle + quicksort(right)
 
+# Ram is 16 MB
 chunk_size = 16 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 
-@profile
+
 def split_sort_file():
+    # starting the monitoring
+    tracemalloc.start()
+
+    print('Splitting file into chunks and sorting...')
+    
+    # print memory usage at start
+    current, peak = tracemalloc.get_traced_memory()
+    print(f"Initial memory usage: {current / 1024 / 1024} MB")
+    print(f"Peak memory usage: {peak / 1024 / 1024} MB")
+    
     chunk_count = 0
     with open('unsorted.txt', 'r') as file:
         for line in file:
@@ -28,6 +39,21 @@ def split_sort_file():
                 chunk.clear()
                 print('Chunk ' + str(chunk_count) + ' sorted and stored!')
                 chunk_count += 1
+
+                # Get the current and peak memory usage
+                current, peak = tracemalloc.get_traced_memory()
+
+                # Convert to MB
+                current_mb = current / 1024 / 1024
+                peak_mb = peak / 1024 / 1024
+
+                # Print the results in MB
+                print(f"Current memory usage: {current_mb:.2f} MB")
+                print(f"Peak memory usage: {peak_mb:.2f} MB")
+    
+
+    # stopping the library
+    tracemalloc.stop()
 
 
 if __name__ == '__main__':
