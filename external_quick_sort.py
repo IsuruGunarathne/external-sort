@@ -11,7 +11,7 @@ def quicksort(arr):
     return quicksort(left) + middle + quicksort(right)
 
 # Ram is 16 MB
-chunk_size = 16 # 16 MB
+chunk_size = 4 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 
