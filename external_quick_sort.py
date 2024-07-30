@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
     sorted_files = [f'chunk{i}.txt' for i in range(n_chunks)]
     print(sorted_files)
-    k_way_merge(sorted_files, 'sorted.txt')
+    k_way_merge(sorted_files, 'sorted_quick.txt')
     delete_files(n_chunks)
 
     end_time = time.time()
