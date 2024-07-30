@@ -116,7 +116,7 @@ def split_file():
         for line in file:
             chunk.append(int(line))
             if len(chunk) == number_of_lines_per_chunk:
-                print('sorting chunk', chunk_count)
+                # print('sorting chunk', chunk_count)
                 
                 sorted_chunk = merge_sort(chunk)
 
@@ -125,10 +125,10 @@ def split_file():
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
                 sorted_chunk.clear()
-                print('Chunk ' + str(chunk_count) + ' stored!')
+                # print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
-                print_memory_usage()
+                # print_memory_usage()
     
     # Write any remaining lines in the last chunk
     if chunk:
