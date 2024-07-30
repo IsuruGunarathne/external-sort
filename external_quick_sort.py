@@ -4,6 +4,12 @@ import os
 import heapq
 from contextlib import ExitStack
 
+# Ram is 16 MB
+chunk_size = 2 # 16 MB
+chunk = []
+number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
+details = []
+
 def k_way_merge(sorted_files, output_file):
     merge_time_start = time.time()
     tracemalloc.start()
@@ -35,8 +41,8 @@ def k_way_merge(sorted_files, output_file):
     merge_time_end = time.time()
     current, peak = tracemalloc.get_traced_memory()
     peak_mb = peak / 1024 / 1024
-    details.append('merge memory usage:'+ str(peak_mb)+ 'MB')
-    details.append('merge time:'+ str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
+    details.append('merge memory usage: '+ str(peak_mb)+ 'MB')
+    details.append('merge time: '+ str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
     tracemalloc.stop()
 
 # Function to find the partition position
@@ -81,12 +87,6 @@ def quicksort(array, low, high):
 
         # Recursive call on the right of pivot
         quicksort(array, pi + 1, high)
-
-# Ram is 16 MB
-chunk_size = 3 # 16 MB
-chunk = []
-number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
-details = []
 
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
@@ -138,8 +138,8 @@ def split_file():
     current, peak = tracemalloc.get_traced_memory()
     peak_mb = peak / 1024 / 1024
     split_end = time.time()
-    details.append('split memory usage:'+ str(peak_mb)+ 'MB')
-    details.append('split time:'+ str(round(split_end - split_start, 2))+ 'seconds')
+    details.append('split memory usage: '+ str(peak_mb)+ 'MB')
+    details.append('split time: '+ str(round(split_end - split_start, 2))+ 'seconds')
 
     # stopping the library
     tracemalloc.stop()
@@ -150,8 +150,8 @@ def delete_files(n_chunks):
         file_name = 'chunk' + str(i) + '.txt'
         os.remove(file_name)
 
-def logDetails():
-    with open('details_quick.txt', 'w') as file:
+def logDetails(time_taken):
+    with open('details_quick'+str(chunk_size)+'.txt', 'w') as file:
         file.write('Details:\n')
         file.write('---------------------------------------------\n')
         file.write('Chunk size: ' + str(chunk_size) + ' MB\n')
@@ -159,6 +159,8 @@ def logDetails():
         file.write('---------------------------------------------\n')
         for detail in details:
             file.write(str(detail) + '\n')
+        file.write('---------------------------------------------\n')
+        file.write('Total Time taken: ' + str(time_taken) + ' seconds\n')
 
 if __name__ == '__main__':
     # record the start time
@@ -188,7 +190,8 @@ if __name__ == '__main__':
     print(sorted_files)
     k_way_merge(sorted_files, 'sorted_quick.txt')
     delete_files(n_chunks)
-    logDetails()
+
 
     end_time = time.time()
+    logDetails(round(end_time - start_time, 2))
     print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
