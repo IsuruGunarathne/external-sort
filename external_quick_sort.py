@@ -105,7 +105,7 @@ def split_file():
         for line in file:
             chunk.append(int(line))
             if len(chunk) == number_of_lines_per_chunk:
-                # quicksort(chunk)
+                quicksort(chunk, 0, len(chunk) - 1)
                 with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
                     for number in chunk:
                         chunk_file.write(str(number) + '\n')
@@ -135,25 +135,6 @@ def delete_files(n_chunks):
         file_name = 'chunk' + str(i) + '.txt'
         os.remove(file_name)
 
-def sort_chunks(n_chunks):
-    tracemalloc.start()
-    print_memory_usage()
-    for i in range(n_chunks):
-        chunk = []
-        with open('chunk' + str(i) + '.txt', 'r') as chunk_file:
-            for line in chunk_file:
-                chunk.append(int(line))
-        
-        quicksort(chunk, 0, len(chunk) - 1)
-        
-        with open('chunk' + str(i) + '.txt', 'w') as sorted_chunk_file:
-            for number in chunk:
-                sorted_chunk_file.write(str(number) + '\n')
-        
-        print('Chunk ' + str(i) + ' sorted!')
-        print_memory_usage()
-        
-    tracemalloc.stop()
 
 if __name__ == '__main__':
     # record the start time
@@ -170,10 +151,7 @@ if __name__ == '__main__':
     print('Number of chunks: ' + str(n_chunks))
     print("")
     print("---------------------------------------------")
-
-
-    print('Sorting chunks...')
-    sort_chunks(n_chunks)
+    print("")
     
     print("---------------------------------------------")
     print("")
