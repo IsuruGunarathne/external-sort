@@ -5,7 +5,7 @@ import heapq
 from contextlib import ExitStack
 
 # Ram is 16 MB
-chunk_size = 2 # 16 MB
+chunk_size = 0.5 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 details = []
@@ -118,10 +118,10 @@ def split_file():
                     for number in chunk:
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
-                print('Chunk ' + str(chunk_count) + ' stored!')
+                # print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
-                print_memory_usage()
+                # print_memory_usage()
     
     # Write any remaining lines in the last chunk
     if chunk:
