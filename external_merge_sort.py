@@ -5,7 +5,7 @@ import heapq
 from contextlib import ExitStack
 
 # Ram is 16 MB
-chunk_size = 0.25 # 16 MB
+chunk_size = 0.1 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
 details=[]
