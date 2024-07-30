@@ -5,6 +5,7 @@ import heapq
 from contextlib import ExitStack
 
 def k_way_merge(sorted_files, output_file):
+    merge_time_start = time.time()
     tracemalloc.start()
     print_memory_usage()
 
@@ -31,6 +32,11 @@ def k_way_merge(sorted_files, output_file):
     
     print('Chunks merged successfully!')
     print_memory_usage()    
+    merge_time_end = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    peak_mb = peak / 1024 / 1024
+    details.append('merge memory usage:'+ str(peak_mb)+ 'MB')
+    details.append('merge time:'+ str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
     tracemalloc.stop()
 
 # Function to find the partition position
@@ -77,9 +83,10 @@ def quicksort(array, low, high):
         quicksort(array, pi + 1, high)
 
 # Ram is 16 MB
-chunk_size = 4 # 16 MB
+chunk_size = 3 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
+details = []
 
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
@@ -93,6 +100,7 @@ def print_memory_usage():
     print(f"Peak memory usage: {peak_mb:.2f} MB")
 
 def split_file():
+    split_start = time.time()
     # starting the monitoring
     tracemalloc.start()
 
@@ -126,6 +134,13 @@ def split_file():
         
         print_memory_usage()
 
+    
+    current, peak = tracemalloc.get_traced_memory()
+    peak_mb = peak / 1024 / 1024
+    split_end = time.time()
+    details.append('split memory usage:'+ str(peak_mb)+ 'MB')
+    details.append('split time:'+ str(round(split_end - split_start, 2))+ 'seconds')
+
     # stopping the library
     tracemalloc.stop()
     return chunk_count
@@ -135,6 +150,15 @@ def delete_files(n_chunks):
         file_name = 'chunk' + str(i) + '.txt'
         os.remove(file_name)
 
+def logDetails():
+    with open('details_quick.txt', 'w') as file:
+        file.write('Details:\n')
+        file.write('---------------------------------------------\n')
+        file.write('Chunk size: ' + str(chunk_size) + ' MB\n')
+        file.write('Number of lines per chunk: ' + str(number_of_lines_per_chunk) + '\n')
+        file.write('---------------------------------------------\n')
+        for detail in details:
+            file.write(str(detail) + '\n')
 
 if __name__ == '__main__':
     # record the start time
@@ -164,6 +188,7 @@ if __name__ == '__main__':
     print(sorted_files)
     k_way_merge(sorted_files, 'sorted_quick.txt')
     delete_files(n_chunks)
+    logDetails()
 
     end_time = time.time()
     print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')

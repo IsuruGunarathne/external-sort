@@ -5,6 +5,7 @@ import heapq
 from contextlib import ExitStack
 
 def k_way_merge(sorted_files, output_file):
+    merge_time_start = time.time()
     tracemalloc.start()
     print_memory_usage()
 
@@ -31,65 +32,62 @@ def k_way_merge(sorted_files, output_file):
     
     print('Chunks merged successfully!')
     print_memory_usage()    
+    merge_time_end = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    peak_mb = peak / 1024 / 1024
+    details.append('merge memory usage:'+ str(peak_mb)+ 'MB')
+    details.append('merge time:'+str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
     tracemalloc.stop()
 
 # Merge sort
 
-def merge(arr, start, mid, end):
-    start2 = mid + 1
- 
-    # If the direct merge is already sorted
-    if (arr[mid] <= arr[start2]):
-        return
- 
-    # Two pointers to maintain start
-    # of both arrays to merge
-    while (start <= mid and start2 <= end):
- 
-        # If element 1 is in right place
-        if (arr[start] <= arr[start2]):
-            start += 1
+def merge_sort(arr):
+    if len(arr) <= 1:
+        return arr
+
+    # Divide the array into two halves
+    mid = len(arr) // 2
+    left_half = arr[:mid]
+    right_half = arr[mid:]
+
+    # Recursively sort both halves
+    left_sorted = merge_sort(left_half)
+    right_sorted = merge_sort(right_half)
+
+    # Merge the sorted halves
+    return merge(left_sorted, right_sorted)
+
+def merge(left, right):
+    merged = []
+    left_index = 0
+    right_index = 0
+
+    # Merge the two halves together while maintaining order
+    while left_index < len(left) and right_index < len(right):
+        if left[left_index] < right[right_index]:
+            merged.append(left[left_index])
+            left_index += 1
         else:
-            value = arr[start2]
-            index = start2
- 
-            # Shift all the elements between element 1
-            # element 2, right by 1.
-            while (index != start):
-                arr[index] = arr[index - 1]
-                index -= 1
- 
-            arr[start] = value
- 
-            # Update all the pointers
-            start += 1
-            mid += 1
-            start2 += 1
- 
- 
-'''
-* l is for left index and r is right index of
-the sub-array of arr to be sorted
-'''
- 
- 
-def mergeSort(arr, l, r):
-    if (l < r):
- 
-        # Same as (l + r) / 2, but avoids overflow
-        # for large l and r
-        m = l + (r - l) // 2
- 
-        # Sort first and second halves
-        mergeSort(arr, l, m)
-        mergeSort(arr, m + 1, r)
- 
-        merge(arr, l, m, r)
+            merged.append(right[right_index])
+            right_index += 1
+
+    # If there are remaining elements in the left half, add them
+    while left_index < len(left):
+        merged.append(left[left_index])
+        left_index += 1
+
+    # If there are remaining elements in the right half, add them
+    while right_index < len(right):
+        merged.append(right[right_index])
+        right_index += 1
+
+    return merged
 
 # Ram is 16 MB
-chunk_size = 4 # 16 MB
+chunk_size = 1 # 16 MB
 chunk = []
 number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
+details=[]
 
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
@@ -103,7 +101,8 @@ def print_memory_usage():
     print(f"Peak memory usage: {peak_mb:.2f} MB")
 
 def split_file():
-    # starting the monitoring
+    split_start = time.time()
+     # starting the monitoring
     tracemalloc.start()
 
     print('Splitting file into chunks and sorting...')
@@ -115,13 +114,15 @@ def split_file():
         for line in file:
             chunk.append(int(line))
             if len(chunk) == number_of_lines_per_chunk:
+                print('sorting chunk', chunk_count)
                 
-                mergeSort(chunk, 0, len(chunk) - 1)
-                
+                sorted_chunk = merge_sort(chunk)
+
                 with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
-                    for number in chunk:
+                    for number in sorted_chunk:
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
+                sorted_chunk.clear()
                 print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
@@ -139,6 +140,11 @@ def split_file():
         print_memory_usage()
 
     # stopping the library
+    split_end = time.time()
+    current, peak = tracemalloc.get_traced_memory()
+    peak_mb = peak / 1024 / 1024
+    details.append('split memory usage:'+str(peak_mb)+ 'MB')
+    details.append('split time:'+ str(round(split_end - split_start, 2))+ 'seconds')
     tracemalloc.stop()
     return chunk_count
 
@@ -146,6 +152,16 @@ def delete_files(n_chunks):
     for i in range(n_chunks):
         file_name = 'chunk' + str(i) + '.txt'
         os.remove(file_name)
+
+def log_details():
+    with open('details_merge.txt', 'w') as file:
+        file.write('Details:\n')
+        file.write('---------------------------------------------\n')
+        file.write('Chunk size: ' + str(chunk_size) + ' MB\n')
+        file.write('Number of lines per chunk: ' + str(number_of_lines_per_chunk) + '\n')
+        file.write('---------------------------------------------\n')
+        for detail in details:
+            file.write(str(detail) + '\n')
 
 if __name__ == '__main__':
     # record the start time
@@ -169,8 +185,9 @@ if __name__ == '__main__':
     sorted_files = [f'chunk{i}.txt' for i in range(n_chunks)]
     print(sorted_files)
     k_way_merge(sorted_files, 'sorted_merge.txt')
-    
     delete_files(n_chunks)
+    log_details()
 
     end_time = time.time()
     print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
+
