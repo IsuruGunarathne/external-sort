@@ -38,6 +38,7 @@ class IntervalHeap:
                 self.minHeapifyDown(self.min_heap, len(self.min_heap), largest)
             else:
                 self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
+                
     def minHeapifyDown(self,arr, n, i):
         # print("Min Heapify Down")
         # print_binary_tree(self.min_heap)
@@ -145,22 +146,17 @@ def print_binary_tree(arr):
                 print_whitespace(spacing)
         print()  # New line for the next level
 
-# Sorting logic
 
-# Buffer sizes
-
-buffer_size_mid=256*1024
-buffer_size_small=128*1024
-buffer_size_large=128*1024
-buffer_size_in=128*1024
-
-def fill_mid_buffer(file, buffer):
+# Fill buffer with input values
+def fill_buffer(file, buffer, current_position,size):
     buffer.clear()
-    for i in range(buffer_size_mid):
+    for i in range(size):
         line = file.readline().strip()
         if not line:
             break
         buffer.append(int(line))
+    current_position = current_position + size
+    return current_position
 
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
@@ -172,23 +168,73 @@ def print_memory_usage():
     # Print the results in MB
     print(f"Current memory usage: {current_mb:.2f} MB")
     print(f"Peak memory usage: {peak_mb:.2f} MB")
+
+def print_buffers(buffer_small, buffer_large, buffer_in):
+    print("buffer_small",buffer_small.__len__())
+    print("buffer_large",buffer_large.__len__())
+    print("buffer_in",buffer_in.__len__())
     
 if __name__ == '__main__':
     start_time = time.time()
     tracemalloc.start()
+    # Buffer sizes
 
+    buffer_size_mid=256*1024
+    buffer_size_small=64*1024
+    buffer_size_large=64*1024
+    buffer_size_in=64*1024
+    
+    # Other tracking variables
+    current_position=0
+    file_size=256*1024*1024
+    min_max_to_remove=0 # 0 remove min, 1 remove max
     input_file='unsorted.txt'
+    input_file_open = open(input_file, 'r')
     buffer_mid = []
     buffer_small = []
     buffer_large = []
     buffer_in = []
-    fill_mid_buffer(open(input_file, 'r'), buffer_mid)
-    # print(buffer_mid)
+
+
+    ## Sorting logic
+
+    # Fill buffers mid and input
+
+    current_position=fill_buffer(input_file_open, buffer_mid, current_position,buffer_size_mid)
+    current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)    
+    print("current_position",current_position/1024,"KB")
+
+    # Create interval heap for mid buffer
     mid_heap = IntervalHeap(buffer_mid)
-    
-    
+    # print_buffers(buffer_small, buffer_large, buffer_in)
+
 
     
+    while len(buffer_in)>0:
+        val = buffer_in.pop(0)
+        print("val",val)
+        print_buffers(buffer_small, buffer_large, buffer_in)
+        if val <= mid_heap.getMin():
+            print("adding to small buffer")
+            buffer_small.append(val)
+        elif val >= mid_heap.getMax():
+            print("adding to large buffer")
+            buffer_large.append(val)
+        else:
+            # add to mid heap
+            if min_max_to_remove==0:
+                print(mid_heap.getMin(),"moving to small buffer",val,"addded to mid heap")
+                buffer_small.append(mid_heap.popMin())
+                mid_heap.insert(val)
+                min_max_to_remove=1
+            else:
+                print(mid_heap.getMax(),"moving to large buffer",val,"addded to mid heap")
+                buffer_large.append(mid_heap.popMax())
+                mid_heap.insert(val)
+                min_max_to_remove=0
+    
+    # print_buffers(buffer_small, buffer_large, buffer_in)
+
     end_time = time.time()
     print_memory_usage()
     print(f"Execution time: {end_time - start_time:.2f} seconds ")
