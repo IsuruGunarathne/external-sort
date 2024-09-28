@@ -33,12 +33,14 @@ class IntervalHeap:
             largest = r
         if largest != i:
             (arr[i], arr[largest]) = (arr[largest], arr[i])
-            if self.min_heap[largest]> self.max_heap[largest]:
-                self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
-                self.minHeapifyDown(self.min_heap, len(self.min_heap), largest)
-            else:
-                self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
-                
+            # Ensure that we're not accessing out-of-bound indices
+            if largest < len(self.min_heap) and largest < len(self.max_heap):
+                if self.min_heap[largest] > self.max_heap[largest]:
+                    self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
+                    self.minHeapifyDown(self.min_heap, len(self.min_heap), largest)
+                else:
+                    self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
+
     def minHeapifyDown(self,arr, n, i):
         # print("Min Heapify Down")
         # print_binary_tree(self.min_heap)
