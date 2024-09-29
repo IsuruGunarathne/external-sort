@@ -39,8 +39,8 @@ class IntervalHeap:
                 if self.min_heap[largest] > self.max_heap[largest]:
                     self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
                     self.minHeapifyDown(self.min_heap, len(self.min_heap), largest)
-            else:
-                self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
+                else:
+                    self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
 
     def minHeapifyDown(self,arr, n, i):
         # print("Min Heapify Down")
@@ -270,6 +270,7 @@ def sort(directory):
         if len(buffer_in)==0:
             current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)
             print("current_position",current_position*8/1024/1024,"MB")
+            print(mid_heap.getMin(),mid_heap.getMax())
             # print_memory_usage()
             # print_buffers(buffer_small, buffer_large, buffer_in)
     
