@@ -311,14 +311,28 @@ def sort(directory):
     
     # combining all sorted files
     print("combining sorted files")
-    sorted_small = open(directory + '\\small\\sorted.txt', 'r')
-    sorted_large = open(directory + '\\large\\sorted.txt', 'r')
+    skip_small = False
+    skip_large = False
+    # check if a sorted.txt file exists in the directory before trying to read from it
+    if not os.path.exists(directory + '\\small\\sorted.txt'):
+        skip_small = True
+    else:
+        sorted_small = open(directory + '\\small\\sorted.txt', 'r')
+    
+    if not os.path.exists(directory + '\\large\\sorted.txt'):
+        skip_large = True
+    else:
+        sorted_large = open(directory + '\\large\\sorted.txt', 'r')
+
     sorted_file = open(directory+'\\sorted.txt', 'w')
 
     buffer_in=[]
     
     # read from sorted small file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
     while True:
+        if skip_small:
+            print("skipping small at", directory)
+            break
         line = sorted_small.readline().strip()
         if not line:
             break
@@ -333,8 +347,9 @@ def sort(directory):
 
     # read from mid file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
 
+    mid_open = open(mid_file, 'r')
     while True:
-        line = open(mid_file, 'r').readline().strip()
+        line = mid_open.readline().strip()
         if not line:
             break
         buffer_in.append(int(line))
@@ -348,6 +363,9 @@ def sort(directory):
 
     # read from sorted large file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
     while True:
+        if skip_large:
+            print("skipping large at",directory)
+            break
         line = sorted_large.readline().strip()
         if not line:
             break
@@ -361,12 +379,19 @@ def sort(directory):
     buffer_in.clear()
 
     # close files
-    sorted_small.close()
-    sorted_large.close()
-    mid_file.close()
+    if not skip_small:
+        sorted_small.close()
+    if not skip_large:
+        sorted_large.close()
+    
+    mid_open.close()
     sorted_file.close()
 
     # delete files
+    if not skip_small:
+        os.remove(directory + '\\small\\sorted.txt')
+    if not skip_large:
+        os.remove(directory + '\\large\\sorted.txt')
     os.remove(large_file)
     os.remove(small_file)
     os.remove(mid_file)
