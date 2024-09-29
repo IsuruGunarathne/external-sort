@@ -184,11 +184,12 @@ def sort(directory):
     print("sorting",directory)
     # Buffer sizes
     global depth_counter
+    global start_time
 
-    buffer_size_mid=1*1024*1024
-    buffer_size_small=256*1024
-    buffer_size_large=256*1024
-    buffer_size_in=256*1024
+    buffer_size_mid=256*1024
+    buffer_size_small=64*1024
+    buffer_size_large=64*1024
+    buffer_size_in=64*1024
     
     # Other tracking variables
     current_position=0
@@ -268,7 +269,7 @@ def sort(directory):
         # fill buffer_in if empty
         if len(buffer_in)==0:
             current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)
-            # print("current_position",current_position*8/1024/1024,"MB")
+            print("current_position",current_position*8/1024/1024,"MB")
             # print(mid_heap.getMin(),mid_heap.getMax())
             # print_memory_usage()
             # print_buffers(buffer_small, buffer_large, buffer_in)
@@ -300,6 +301,8 @@ def sort(directory):
     print("finished depth",depth_counter)
     depth_counter+=1
     print_memory_usage()
+    time_now = time.time()
+    print("time at this depth",time_now-start_time)
     print("-------------------------------------------")
 
     # recursively sort large and small folders only if the 'unsorted.txt' file is not empty in each folder
