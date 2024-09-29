@@ -2,6 +2,7 @@
 import time
 import tracemalloc
 import math
+import os
 
 # Interval heap
 
@@ -180,10 +181,10 @@ def write_buffer_to_file(buffer, file):
     for i in buffer:
         file.write(str(i) + "\n")
     
-if __name__ == '__main__':
-    start_time = time.time()
-    tracemalloc.start()
+def sort(directory):
+    print("sorting",directory)
     # Buffer sizes
+    global depth_counter
 
     buffer_size_mid=256*1024
     buffer_size_small=64*1024
@@ -193,11 +194,15 @@ if __name__ == '__main__':
     # Other tracking variables
     current_position=0
     min_max_to_remove=0 # 0 remove min, 1 remove max
-    input_file='unsorted.txt'
-    large_file='large.txt'
-    small_file='small.txt'
-    mid_file='mid.txt'
-    # delete files if they exist
+    input_file=directory+'\\unsorted.txt'
+
+    # Make large and small folders if they don't exist
+    os.makedirs(directory + '\\large', exist_ok=True)
+    os.makedirs(directory + '\\small', exist_ok=True)
+    large_file=directory+'\\large\\unsorted.txt'
+    small_file=directory+'\\small\\unsorted.txt'
+    mid_file=directory+'\\mid.txt'
+    # make empty files / delete contents of files
     open(large_file, 'w').close()
     open(small_file, 'w').close()
     open(mid_file, 'w').close()
@@ -278,15 +283,107 @@ if __name__ == '__main__':
     buffer_mid_out = []
     while mid_heap.getMin() is not None:
         val = mid_heap.popMin()
-        print(val)
+        # print(val)
         buffer_mid_out.append(val)
     
     # write mid buffer to file
-    write_buffer_to_file(buffer_mid_out, open('mid.txt', 'a'))
+
+    print('sorting mid buffer, not required if the heap works properly')
+    buffer_mid_out.sort()
+    write_buffer_to_file(buffer_mid_out, open(mid_file, 'a'))
+    buffer_mid_out.clear()
 
 
+    # close files
+    input_file_open.close()
+    print("-------------------------------------------")
+    print("finished depth",depth_counter)
+    depth_counter+=1
+    print_memory_usage()
+    print("-------------------------------------------")
 
+    # recursively sort large and small folders only if the 'unsorted.txt' file is not empty in each folder
+    if os.stat(large_file).st_size > 0:
+        sort(directory + '\\large')
+    if os.stat(small_file).st_size > 0:
+        sort(directory + '\\small')
+    
+    # combining all sorted files
+    print("combining sorted files")
+    sorted_small = open(directory + '\\small\\sorted.txt', 'r')
+    sorted_large = open(directory + '\\large\\sorted.txt', 'r')
+    sorted_file = open(directory+'\\sorted.txt', 'w')
+
+    buffer_in=[]
+    
+    # read from sorted small file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+    while True:
+        line = sorted_small.readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # read from mid file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+
+    while True:
+        line = open(mid_file, 'r').readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # read from sorted large file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+    while True:
+        line = sorted_large.readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+        
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # close files
+    sorted_small.close()
+    sorted_large.close()
+    mid_file.close()
+    sorted_file.close()
+
+    # delete files
+    os.remove(large_file)
+    os.remove(small_file)
+    os.remove(mid_file)
+
+    print("finished sorting",directory)
+    print("recursive depth",depth_counter)
     print_buffers(buffer_small, buffer_large, buffer_in)
+
+if __name__ == '__main__':
+    start_time = time.time()
+    tracemalloc.start()
+    
+    depth_counter = 0
+
+    # get current directory
+    current_directory = os.getcwd()
+    sort(current_directory)
+    
 
     end_time = time.time()
     print_memory_usage()
