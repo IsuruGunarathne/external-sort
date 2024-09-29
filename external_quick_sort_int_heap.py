@@ -185,10 +185,10 @@ def sort(directory):
     # Buffer sizes
     global depth_counter
 
-    buffer_size_mid=256*1024
-    buffer_size_small=64*1024
-    buffer_size_large=64*1024
-    buffer_size_in=64*1024
+    buffer_size_mid=1*1024*1024
+    buffer_size_small=256*1024
+    buffer_size_large=256*1024
+    buffer_size_in=256*1024
     
     # Other tracking variables
     current_position=0
@@ -268,8 +268,8 @@ def sort(directory):
         # fill buffer_in if empty
         if len(buffer_in)==0:
             current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)
-            print("current_position",current_position*8/1024/1024,"MB")
-            print(mid_heap.getMin(),mid_heap.getMax())
+            # print("current_position",current_position*8/1024/1024,"MB")
+            # print(mid_heap.getMin(),mid_heap.getMax())
             # print_memory_usage()
             # print_buffers(buffer_small, buffer_large, buffer_in)
     
@@ -277,7 +277,7 @@ def sort(directory):
     write_buffer_to_file(buffer_small, open(small_file, 'a'))
     write_buffer_to_file(buffer_large, open(large_file, 'a'))
     
-    print("current_position",current_position*8/1024/1024,"MB")
+    # print("current_position",current_position*8/1024/1024,"MB")
 
     # store fill mid_buffer from mid_heap
     buffer_mid_out = []
@@ -415,6 +415,3 @@ if __name__ == '__main__':
     print(f"Execution time: {end_time - start_time:.2f} seconds ")
     tracemalloc.stop()
 
-
-
-    
