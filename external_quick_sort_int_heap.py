@@ -22,9 +22,6 @@ class IntervalHeap:
             (arr[i], arr[parent]) = (arr[parent], arr[i])
             self.minHeapifyUp(arr, parent)
     def maxHeapifyDown(self,arr, n, i):
-        # print("Max Heapify Down")
-        # print_binary_tree(self.min_heap)
-        # print_binary_tree(self.max_heap)
         largest = i  
         l = 2 * i + 1  
         r = 2 * i + 2  
@@ -34,18 +31,11 @@ class IntervalHeap:
             largest = r
         if largest != i:
             (arr[i], arr[largest]) = (arr[largest], arr[i])
-            # Ensure that we're not accessing out-of-bound indices
-            if largest < len(self.min_heap) and largest < len(self.max_heap):
-                if self.min_heap[largest] > self.max_heap[largest]:
-                    self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
-                    self.minHeapifyDown(self.min_heap, len(self.min_heap), largest)
-                else:
-                    self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
+            if self.min_heap[largest]> self.max_heap[largest]:
+                self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
+            self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
 
     def minHeapifyDown(self,arr, n, i):
-        # print("Min Heapify Down")
-        # print_binary_tree(self.min_heap)
-        # print_binary_tree(self.max_heap)
         smallest = i  
         l = 2 * i + 1  
         r = 2 * i + 2  
@@ -55,11 +45,9 @@ class IntervalHeap:
             smallest = r
         if smallest != i:
             (arr[i], arr[smallest]) = (arr[smallest], arr[i])
-            if self.min_heap[smallest]> self.max_heap[smallest]:
+            if len(self.max_heap) > smallest and self.min_heap[smallest]> self.max_heap[smallest]:
                 self.min_heap[smallest], self.max_heap[smallest] = self.max_heap[smallest], self.min_heap[smallest]
-                self.maxHeapifyDown(self.max_heap, len(self.max_heap), smallest)
-            else:
-                self.minHeapifyDown(self.min_heap, len(self.min_heap), smallest)
+            self.minHeapifyDown(self.min_heap, len(self.min_heap), smallest)
     def insert(self, value):
         if len(self.min_heap) == len(self.max_heap) :
             self.min_heap.append(value)
@@ -69,13 +57,16 @@ class IntervalHeap:
                 self.maxHeapifyUp(self.max_heap, parent)
             else:
                 self.minHeapifyUp(self.min_heap, len(self.min_heap) - 1)
-        else:
+        elif len(self.min_heap) > len(self.max_heap):
             self.max_heap.append(value)
             if self.max_heap[-1] < self.min_heap[-1]:
                 self.max_heap[-1], self.min_heap[-1] = self.min_heap[-1], self.max_heap[-1]
                 self.minHeapifyUp(self.min_heap,len(self.min_heap) - 1)
             else:
                 self.maxHeapifyUp(self.max_heap, len(self.max_heap) - 1)
+        else:
+            print("Error in insert")
+            exit()
     def buildHeap(self,arr, n):
         for i in range(n):
             self.insert(arr[i])
@@ -85,39 +76,47 @@ class IntervalHeap:
         return self.min_heap[0]
     def getMax(self):
         if len(self.max_heap) == 0:
-            return None
-        return self.max_heap[0]
+            if len(self.min_heap)==1:
+                return self.min_heap[0]
+            else:
+                return None
+        else:
+            return self.max_heap[0]
     def popMax(self):
-        # print("popMax")
-        # print_binary_tree(self.min_heap)
-        # print_binary_tree(self.max_heap)
         if len(self.max_heap) == 0:
-            return None
+            if len(self.min_heap) == 1:
+                return self.min_heap.pop()
+            else:
+                return None
         max_val = self.max_heap[0]
-        if len(self.max_heap) >= len(self.min_heap):
+        if len(self.max_heap) == len(self.min_heap):
             self.max_heap[0] = self.max_heap[-1]
             self.max_heap.pop()
             self.maxHeapifyDown(self.max_heap, len(self.max_heap), 0)
-        else:
+        elif len(self.max_heap) < len(self.min_heap):
             self.max_heap[0] = self.min_heap[-1]
             self.min_heap.pop()
             self.maxHeapifyDown(self.max_heap, len(self.max_heap), 0)
+        else:
+            print("Error in popMax")
+            exit()
+        # print("heap sizes min ",len(self.min_heap),"max ",len(self.max_heap))
         return max_val
     def popMin(self):
-        # print("popMin")
-        # print_binary_tree(self.min_heap)
-        # print_binary_tree(self.max_heap)
         if len(self.min_heap) == 0:
             return None
         min_val = self.min_heap[0]
-        if len(self.min_heap) >= len(self.max_heap):
+        if len(self.min_heap) == len(self.max_heap):
+            self.min_heap[0] = self.max_heap[-1]
+            self.max_heap.pop()
+            self.minHeapifyDown(self.min_heap, len(self.min_heap), 0)
+        elif len(self.min_heap) > len(self.max_heap):
             self.min_heap[0] = self.min_heap[-1]
             self.min_heap.pop()
             self.minHeapifyDown(self.min_heap, len(self.min_heap), 0)
         else:
-            self.min_heap[0] = self.max_heap[-1]
-            self.max_heap.pop()
-            self.minHeapifyDown(self.min_heap, len(self.min_heap), 0)
+            print("Error in popMin")
+            exit()
         return min_val
     
 def print_binary_tree(arr):
@@ -289,8 +288,8 @@ def sort(directory):
     
     # write mid buffer to file
 
-    print('sorting mid buffer, not required if the heap works properly')
-    buffer_mid_out.sort()
+    # print('sorting mid buffer, not required if the heap works properly')
+    # buffer_mid_out.sort()
     write_buffer_to_file(buffer_mid_out, open(mid_file, 'a'))
     buffer_mid_out.clear()
 

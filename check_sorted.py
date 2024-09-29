@@ -6,9 +6,10 @@ current=0
 # read first line and store in prev
 with open(file_name, 'r') as file:
     prev = int(file.readline())
+    print("running...")
     for line in file:
         current = int(line)
-        print(prev, current)
+        # print(prev, current)
         if prev > current:
             is_sorted = False
             break
