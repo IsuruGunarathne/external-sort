@@ -281,11 +281,8 @@ def sort(directory):
     # print("current_position",current_position*8/1024/1024,"MB")
 
     # store fill mid_buffer from mid_heap
-    buffer_mid_out = []
-    while mid_heap.getMin() is not None:
-        val = mid_heap.popMin()
-        # print(val)
-        buffer_mid_out.append(val)
+    buffer_mid_out = mid_heap.max_heap + mid_heap.min_heap
+    buffer_mid_out.sort()
     
     # write mid buffer to file
 
