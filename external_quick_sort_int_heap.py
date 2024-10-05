@@ -197,9 +197,9 @@ def sort(directory):
     global start_time
 
     buffer_size_mid=200*1024
-    buffer_size_small=50*1024
-    buffer_size_large=50*1024
-    buffer_size_in=50*1024
+    buffer_size_small=64*1024
+    buffer_size_large=64*1024
+    buffer_size_in=64*1024
     
     # Other tracking variables
     current_position=0
