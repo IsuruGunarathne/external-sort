@@ -3,6 +3,7 @@ import time
 import tracemalloc
 import math
 import os
+import gc
 
 # Interval heap
 
@@ -171,14 +172,23 @@ def print_memory_usage():
     print(f"Current memory usage: {current_mb:.2f} MB")
     print(f"Peak memory usage: {peak_mb:.2f} MB")
 
+    # clear the variables
+    current = None
+    peak = None
+    current_mb = None
+    peak_mb = None
+
 def print_buffers(buffer_small, buffer_large, buffer_in):
     print("buffer_small",buffer_small.__len__())
     print("buffer_large",buffer_large.__len__())
     print("buffer_in",buffer_in.__len__())
 
 def write_buffer_to_file(buffer, file):
-    for i in buffer:
-        file.write(str(i) + "\n")
+    # for i in buffer:
+    #     file.write(str(i) + "\n")
+    # pop and write to file
+    while buffer:
+        file.write(str(buffer.pop(0)) + "\n")
     
 def sort(directory):
     print("sorting",directory)
@@ -186,10 +196,10 @@ def sort(directory):
     global depth_counter
     global start_time
 
-    buffer_size_mid=256*1024
-    buffer_size_small=64*1024
-    buffer_size_large=64*1024
-    buffer_size_in=64*1024
+    buffer_size_mid=200*1024
+    buffer_size_small=50*1024
+    buffer_size_large=50*1024
+    buffer_size_in=50*1024
     
     # Other tracking variables
     current_position=0
@@ -283,6 +293,10 @@ def sort(directory):
     # store fill mid_buffer from mid_heap
     buffer_mid_out = mid_heap.max_heap + mid_heap.min_heap
     buffer_mid_out.sort()
+    mid_heap.max_heap.clear()
+    mid_heap.min_heap.clear()
+
+    mid_heap = None
     
     # write mid buffer to file
 
@@ -398,6 +412,15 @@ def sort(directory):
     print("finished sorting",directory)
     print("recursive depth",depth_counter)
     print_buffers(buffer_small, buffer_large, buffer_in)
+
+    # clear all buffers
+    buffer_small.clear()
+    buffer_large.clear()
+    buffer_in.clear()
+    buffer_mid.clear()
+    buffer_mid_out.clear()
+    print("cleared buffers")
+    gc.collect()
 
 if __name__ == '__main__':
     start_time = time.time()
