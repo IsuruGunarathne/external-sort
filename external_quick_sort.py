@@ -1,92 +1,165 @@
+# Imports
 import time
 import tracemalloc
+import math
 import os
-import heapq
-from contextlib import ExitStack
+import gc
 
-# Ram is 16 MB
-chunk_size = 0.5 # 16 MB
-chunk = []
-number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
-details = []
+# Interval heap
 
-def k_way_merge(sorted_files, output_file):
-    merge_time_start = time.time()
-    tracemalloc.start()
-    print_memory_usage()
+class IntervalHeap:
+    def __init__(self,array):
+        self.min_heap = []
+        self.max_heap = []
+        self.buildHeap(array, len(array))
+    def maxHeapifyUp(self,arr, i):
+        parent = (i - 1) // 2
+        if parent >= 0 and arr[i] > arr[parent]:
+            (arr[i], arr[parent]) = (arr[parent], arr[i])
+            self.maxHeapifyUp(arr, parent)
+    def minHeapifyUp(self,arr, i):
+        parent = (i - 1) // 2
+        if parent >= 0 and arr[i] < arr[parent]:
+            (arr[i], arr[parent]) = (arr[parent], arr[i])
+            self.minHeapifyUp(arr, parent)
+    def maxHeapifyDown(self,arr, n, i):
+        largest = i  
+        l = 2 * i + 1  
+        r = 2 * i + 2  
+        if l < n and arr[i] < arr[l]:
+            largest = l
+        if r < n and arr[largest] < arr[r]:
+            largest = r
+        if largest != i:
+            (arr[i], arr[largest]) = (arr[largest], arr[i])
+            if self.min_heap[largest]> self.max_heap[largest]:
+                self.min_heap[largest], self.max_heap[largest] = self.max_heap[largest], self.min_heap[largest]
+            self.maxHeapifyDown(self.max_heap, len(self.max_heap), largest)
 
-    with ExitStack() as stack:
-        # Open all files and keep them open
-        files = [stack.enter_context(open(f)) for f in sorted_files]
-        
-        # Initialize the heap with the first element from each file
-        heap = []
-        for file_idx, file in enumerate(files):
-            line = file.readline().strip()
-            if line:
-                heapq.heappush(heap, (int(line), file_idx))
-        
-        with open(output_file, 'w') as out:
-            while heap:
-                smallest, file_idx = heapq.heappop(heap)
-                out.write(f"{smallest}\n")
-                
-                # Read the next line from the file
-                line = files[file_idx].readline().strip()
-                if line:
-                    heapq.heappush(heap, (int(line), file_idx))
+    def minHeapifyDown(self,arr, n, i):
+        smallest = i  
+        l = 2 * i + 1  
+        r = 2 * i + 2  
+        if l < n and arr[i] > arr[l]:
+            smallest = l
+        if r < n and arr[smallest] > arr[r]:
+            smallest = r
+        if smallest != i:
+            (arr[i], arr[smallest]) = (arr[smallest], arr[i])
+            if len(self.max_heap) > smallest and self.min_heap[smallest]> self.max_heap[smallest]:
+                self.min_heap[smallest], self.max_heap[smallest] = self.max_heap[smallest], self.min_heap[smallest]
+            self.minHeapifyDown(self.min_heap, len(self.min_heap), smallest)
+    def insert(self, value):
+        if len(self.min_heap) == len(self.max_heap) :
+            self.min_heap.append(value)
+            parent = (len(self.min_heap) - 2) // 2
+            if parent >= 0 and self.max_heap[parent] < self.min_heap[-1]:
+                self.max_heap[parent], self.min_heap[-1] = self.min_heap[-1], self.max_heap[parent]
+                self.maxHeapifyUp(self.max_heap, parent)
+            else:
+                self.minHeapifyUp(self.min_heap, len(self.min_heap) - 1)
+        elif len(self.min_heap) > len(self.max_heap):
+            self.max_heap.append(value)
+            if self.max_heap[-1] < self.min_heap[-1]:
+                self.max_heap[-1], self.min_heap[-1] = self.min_heap[-1], self.max_heap[-1]
+                self.minHeapifyUp(self.min_heap,len(self.min_heap) - 1)
+            else:
+                self.maxHeapifyUp(self.max_heap, len(self.max_heap) - 1)
+        else:
+            print("Error in insert")
+            exit()
+    def buildHeap(self,arr, n):
+        for i in range(n):
+            self.insert(arr[i])
+    def getMin(self):
+        if len(self.min_heap) == 0:
+            return None
+        return self.min_heap[0]
+    def getMax(self):
+        if len(self.max_heap) == 0:
+            if len(self.min_heap)==1:
+                return self.min_heap[0]
+            else:
+                return None
+        else:
+            return self.max_heap[0]
+    def popMax(self):
+        if len(self.max_heap) == 0:
+            if len(self.min_heap) == 1:
+                return self.min_heap.pop()
+            else:
+                return None
+        max_val = self.max_heap[0]
+        if len(self.max_heap) == len(self.min_heap):
+            self.max_heap[0] = self.max_heap[-1]
+            self.max_heap.pop()
+            self.maxHeapifyDown(self.max_heap, len(self.max_heap), 0)
+        elif len(self.max_heap) < len(self.min_heap):
+            self.max_heap[0] = self.min_heap[-1]
+            self.min_heap.pop()
+            self.maxHeapifyDown(self.max_heap, len(self.max_heap), 0)
+        else:
+            print("Error in popMax")
+            exit()
+        # print("heap sizes min ",len(self.min_heap),"max ",len(self.max_heap))
+        return max_val
+    def popMin(self):
+        if len(self.min_heap) == 0:
+            return None
+        min_val = self.min_heap[0]
+        if len(self.min_heap) == len(self.max_heap):
+            self.min_heap[0] = self.max_heap[-1]
+            self.max_heap.pop()
+            self.minHeapifyDown(self.min_heap, len(self.min_heap), 0)
+        elif len(self.min_heap) > len(self.max_heap):
+            self.min_heap[0] = self.min_heap[-1]
+            self.min_heap.pop()
+            self.minHeapifyDown(self.min_heap, len(self.min_heap), 0)
+        else:
+            print("Error in popMin")
+            exit()
+        return min_val
     
-    print('Chunks merged successfully!')
-    print_memory_usage()    
-    merge_time_end = time.time()
-    current, peak = tracemalloc.get_traced_memory()
-    peak_mb = peak / 1024 / 1024
-    details.append('merge memory usage: '+ str(peak_mb)+ 'MB')
-    details.append('merge time: '+ str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
-    tracemalloc.stop()
+def print_binary_tree(arr):
+    if not arr:
+        return
 
-# Function to find the partition position
-def partition(array, low, high):
+    def print_whitespace(count):
+        print(" " * count, end='')
 
-    # Choose the rightmost element as pivot
-    pivot = array[high]
+    levels = math.ceil(math.log2(len(arr) + 1))
+    max_width = 2**(levels - 1)
 
-    # Pointer for greater element
-    i = low - 1
+    index = 0
+    for level in range(levels):
+        level_nodes = 2**level
+        if index >= len(arr):
+            break
 
-    # Traverse through all elements
-    # compare each element with pivot
-    for j in range(low, high):
-        if array[j] <= pivot:
+        spacing = max_width // level_nodes
+        first_spacing = spacing // 2
 
-            # If element smaller than pivot is found
-            # swap it with the greater element pointed by i
-            i = i + 1
+        print_whitespace(first_spacing)
+        for i in range(level_nodes):
+            if index >= len(arr):
+                break
+            print(arr[index], end='')
+            index += 1
+            if i < level_nodes - 1:
+                print_whitespace(spacing)
+        print()  # New line for the next level
 
-            # Swapping element at i with element at j
-            (array[i], array[j]) = (array[j], array[i])
 
-    # Swap the pivot element with
-    # the greater element specified by i
-    (array[i + 1], array[high]) = (array[high], array[i + 1])
-
-    # Return the position from where partition is done
-    return i + 1
-
-# Function to perform quicksort
-def quicksort(array, low, high):
-    if low < high:
-
-        # Find pivot element such that
-        # element smaller than pivot are on the left
-        # element greater than pivot are on the right
-        pi = partition(array, low, high)
-
-        # Recursive call on the left of pivot
-        quicksort(array, low, pi - 1)
-
-        # Recursive call on the right of pivot
-        quicksort(array, pi + 1, high)
+# Fill buffer with input values
+def fill_buffer(file, buffer, current_position,size):
+    buffer.clear()
+    for i in range(size):
+        line = file.readline().strip()
+        if not line:
+            break
+        buffer.append(int(line))
+    current_position = current_position + size
+    return current_position
 
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
@@ -99,99 +172,269 @@ def print_memory_usage():
     print(f"Current memory usage: {current_mb:.2f} MB")
     print(f"Peak memory usage: {peak_mb:.2f} MB")
 
-def split_file():
-    split_start = time.time()
-    # starting the monitoring
-    tracemalloc.start()
+    # clear the variables
+    current = None
+    peak = None
+    current_mb = None
+    peak_mb = None
 
-    print('Splitting file into chunks and sorting...')
-    
-    print_memory_usage()
-    
-    chunk_count = 0
-    with open('unsorted.txt', 'r') as file:
-        for line in file:
-            chunk.append(int(line))
-            if len(chunk) == number_of_lines_per_chunk:
-                quicksort(chunk, 0, len(chunk) - 1)
-                with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
-                    for number in chunk:
-                        chunk_file.write(str(number) + '\n')
-                chunk.clear()
-                # print('Chunk ' + str(chunk_count) + ' stored!')
-                chunk_count += 1
+def print_buffers(buffer_small, buffer_large, buffer_in):
+    print("buffer_small",buffer_small.__len__())
+    print("buffer_large",buffer_large.__len__())
+    print("buffer_in",buffer_in.__len__())
 
-                # print_memory_usage()
+def write_buffer_to_file(buffer, file):
+    # for i in buffer:
+    #     file.write(str(i) + "\n")
+    # pop and write to file
+    while buffer:
+        file.write(str(buffer.pop(0)) + "\n")
     
-    # Write any remaining lines in the last chunk
-    if chunk:
-        with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
-            for number in chunk:
-                chunk_file.write(str(number) + '\n')
-        chunk.clear()
-        print('Chunk ' + str(chunk_count) + ' stored!')
-        chunk_count += 1
+def sort(directory):
+    print("sorting",directory)
+    # Buffer sizes
+    global depth_counter
+    global start_time
+
+    buffer_size_mid=200*1024
+    buffer_size_small=64*1024
+    buffer_size_large=64*1024
+    buffer_size_in=64*1024
+    
+    # Other tracking variables
+    current_position=0
+    min_max_to_remove=0 # 0 remove min, 1 remove max
+    input_file=directory+'\\unsorted.txt'
+
+    # Make large and small folders if they don't exist
+    os.makedirs(directory + '\\large', exist_ok=True)
+    os.makedirs(directory + '\\small', exist_ok=True)
+    large_file=directory+'\\large\\unsorted.txt'
+    small_file=directory+'\\small\\unsorted.txt'
+    mid_file=directory+'\\mid.txt'
+    # make empty files / delete contents of files
+    open(large_file, 'w').close()
+    open(small_file, 'w').close()
+    open(mid_file, 'w').close()
+    input_file_open = open(input_file, 'r')
+    buffer_mid = []
+    buffer_small = []
+    buffer_large = []
+    buffer_in = []
+
+
+    ## Sorting logic
+
+    # Fill buffers mid and input
+
+    current_position=fill_buffer(input_file_open, buffer_mid, current_position,buffer_size_mid)
+    current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)    
+    print("current_position",current_position*8/1024/1024,"MB")
+
+    # Create interval heap for mid buffer
+    mid_heap = IntervalHeap(buffer_mid)
+    buffer_mid.clear()
+    print_buffers(buffer_small, buffer_large, buffer_in)
+
+
+    
+    while len(buffer_in)>0:
+        val = buffer_in.pop(0)
+        # print("val",val)
+        # print_buffers(buffer_small, buffer_large, buffer_in)
+
+
+        # store buffers to files and clear if full
+        if len(buffer_small)>=buffer_size_small-5:
+            write_buffer_to_file(buffer_small, open(small_file, 'a'))
+            buffer_small.clear()
         
-        print_memory_usage()
+        if len(buffer_large)>=buffer_size_large-5:
+            write_buffer_to_file(buffer_large, open(large_file, 'a'))
+            buffer_large.clear()
 
+        # Add value to relevant buffer
+        if val <= mid_heap.getMin():
+            # print("adding to small buffer")
+            buffer_small.append(val)
+        elif val >= mid_heap.getMax():
+            # print("adding to large buffer")
+            buffer_large.append(val)
+        else:
+            # add to mid heap
+            if min_max_to_remove==0:
+                # print(mid_heap.getMin(),"moving to small buffer",val,"addded to mid heap")
+                buffer_small.append(mid_heap.popMin())
+                mid_heap.insert(val)
+                min_max_to_remove=1
+            
+            else:
+                # print(mid_heap.getMax(),"moving to large buffer",val,"addded to mid heap")
+                buffer_large.append(mid_heap.popMax())
+                mid_heap.insert(val)
+                min_max_to_remove=0
+
+            
+
+        # fill buffer_in if empty
+        if len(buffer_in)==0:
+            current_position=fill_buffer(input_file_open, buffer_in, current_position,buffer_size_in)
+            print("current_position",current_position*8/1024/1024,"MB")
+            # print(mid_heap.getMin(),mid_heap.getMax())
+            # print_memory_usage()
+            # print_buffers(buffer_small, buffer_large, buffer_in)
     
-    current, peak = tracemalloc.get_traced_memory()
-    peak_mb = peak / 1024 / 1024
-    split_end = time.time()
-    details.append('split memory usage: '+ str(peak_mb)+ 'MB')
-    details.append('split time: '+ str(round(split_end - split_start, 2))+ 'seconds')
+    # write remaining buffers to files
+    write_buffer_to_file(buffer_small, open(small_file, 'a'))
+    write_buffer_to_file(buffer_large, open(large_file, 'a'))
+    
+    # print("current_position",current_position*8/1024/1024,"MB")
 
-    # stopping the library
-    tracemalloc.stop()
-    return chunk_count
+    # store fill mid_buffer from mid_heap
+    buffer_mid_out = mid_heap.max_heap + mid_heap.min_heap
+    buffer_mid_out.sort()
+    mid_heap.max_heap.clear()
+    mid_heap.min_heap.clear()
 
-def delete_files(n_chunks):
-    for i in range(n_chunks):
-        file_name = 'chunk' + str(i) + '.txt'
-        os.remove(file_name)
+    mid_heap = None
+    
+    # write mid buffer to file
 
-def logDetails(time_taken):
-    with open('details_quick'+str(chunk_size)+'.txt', 'w') as file:
-        file.write('Details:\n')
-        file.write('---------------------------------------------\n')
-        file.write('Chunk size: ' + str(chunk_size) + ' MB\n')
-        file.write('Number of lines per chunk: ' + str(number_of_lines_per_chunk) + '\n')
-        file.write('---------------------------------------------\n')
-        for detail in details:
-            file.write(str(detail) + '\n')
-        file.write('---------------------------------------------\n')
-        file.write('Total Time taken: ' + str(time_taken) + ' seconds\n')
+    # print('sorting mid buffer, not required if the heap works properly')
+    # buffer_mid_out.sort()
+    write_buffer_to_file(buffer_mid_out, open(mid_file, 'a'))
+    buffer_mid_out.clear()
+
+
+    # close files
+    input_file_open.close()
+    print("-------------------------------------------")
+    print("finished depth",depth_counter)
+    depth_counter+=1
+    print_memory_usage()
+    time_now = time.time()
+    print("time at this depth",time_now-start_time)
+    print("-------------------------------------------")
+
+    # recursively sort large and small folders only if the 'unsorted.txt' file is not empty in each folder
+    if os.stat(large_file).st_size > 0:
+        sort(directory + '\\large')
+    if os.stat(small_file).st_size > 0:
+        sort(directory + '\\small')
+    
+    # combining all sorted files
+    print("combining sorted files")
+    skip_small = False
+    skip_large = False
+    # check if a sorted.txt file exists in the directory before trying to read from it
+    if not os.path.exists(directory + '\\small\\sorted.txt'):
+        skip_small = True
+    else:
+        sorted_small = open(directory + '\\small\\sorted.txt', 'r')
+    
+    if not os.path.exists(directory + '\\large\\sorted.txt'):
+        skip_large = True
+    else:
+        sorted_large = open(directory + '\\large\\sorted.txt', 'r')
+
+    sorted_file = open(directory+'\\sorted.txt', 'w')
+
+    buffer_in=[]
+    
+    # read from sorted small file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+    while True:
+        if skip_small:
+            print("skipping small at", directory)
+            break
+        line = sorted_small.readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # read from mid file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+
+    mid_open = open(mid_file, 'r')
+    while True:
+        line = mid_open.readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # read from sorted large file, fill buffer_in, and write to sorted file when buffer is full, repeat until all lines are read
+    while True:
+        if skip_large:
+            print("skipping large at",directory)
+            break
+        line = sorted_large.readline().strip()
+        if not line:
+            break
+        buffer_in.append(int(line))
+        if len(buffer_in) >= buffer_size_in:
+            write_buffer_to_file(buffer_in, sorted_file)
+            buffer_in.clear()
+        
+    # write remaining buffer_in to sorted file
+    write_buffer_to_file(buffer_in, sorted_file)
+    buffer_in.clear()
+
+    # close files
+    if not skip_small:
+        sorted_small.close()
+    if not skip_large:
+        sorted_large.close()
+    
+    mid_open.close()
+    sorted_file.close()
+
+    # delete files
+    if not skip_small:
+        os.remove(directory + '\\small\\sorted.txt')
+    if not skip_large:
+        os.remove(directory + '\\large\\sorted.txt')
+    os.remove(large_file)
+    os.remove(small_file)
+    os.remove(mid_file)
+
+    print("finished sorting",directory)
+    print("recursive depth",depth_counter)
+    print_buffers(buffer_small, buffer_large, buffer_in)
+
+    # clear all buffers
+    buffer_small.clear()
+    buffer_large.clear()
+    buffer_in.clear()
+    buffer_mid.clear()
+    buffer_mid_out.clear()
+    print("cleared buffers")
+    gc.collect()
 
 if __name__ == '__main__':
-    # record the start time
     start_time = time.time()
+    tracemalloc.start()
+    
+    depth_counter = 0
 
-    # split file into chunks and sort individual chunks
+    # get current directory
+    current_directory = os.getcwd()
+    sort(current_directory)
     
-    
-    n_chunks = split_file()
-    
-    print("---------------------------------------------")
-    print("")
-    print('File split and chunks stored successfully!')
-    print('Number of chunks: ' + str(n_chunks))
-    print("")
-    print("---------------------------------------------")
-    print("")
-    
-    print("---------------------------------------------")
-    print("")
-    print('Chunks sorted successfully!')
-    print("")
-    print("---------------------------------------------")
-    print('Merging sorted chunks...')
-
-    sorted_files = [f'chunk{i}.txt' for i in range(n_chunks)]
-    print(sorted_files)
-    k_way_merge(sorted_files, 'sorted_quick.txt')
-    delete_files(n_chunks)
-
 
     end_time = time.time()
-    logDetails(round(end_time - start_time, 2))
-    print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
+    print_memory_usage()
+    print(f"Execution time: {end_time - start_time:.2f} seconds ")
+    tracemalloc.stop()
+
