@@ -1,4 +1,4 @@
-# external-sort
+# External Sorting
 
 CS4580 Advanced Data Structures Lab 1
 
