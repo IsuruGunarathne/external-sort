@@ -5,10 +5,10 @@ import heapq
 from contextlib import ExitStack
 
 # Ram is 16 MB
-chunk_size = 0.5 # 16 MB
+chunk_size = 0.5  # 16 MB
 chunk = []
-number_of_lines_per_chunk = chunk_size * 1024 * 1024 // 8  # 8 bytes per number
-details=[]
+number_of_lines_per_chunk = int(chunk_size * 1024 * 1024 // 8)  # 8 bytes per number
+details = []
 
 def k_way_merge(sorted_files, output_file):
     merge_time_start = time.time()
@@ -18,31 +18,31 @@ def k_way_merge(sorted_files, output_file):
     with ExitStack() as stack:
         # Open all files and keep them open
         files = [stack.enter_context(open(f)) for f in sorted_files]
-        
+
         # Initialize the heap with the first element from each file
         heap = []
         for file_idx, file in enumerate(files):
             line = file.readline().strip()
-            if line:
+            if line:  # Avoid empty lines
                 heapq.heappush(heap, (int(line), file_idx))
-        
+
         with open(output_file, 'w') as out:
             while heap:
                 smallest, file_idx = heapq.heappop(heap)
                 out.write(f"{smallest}\n")
-                
+
                 # Read the next line from the file
                 line = files[file_idx].readline().strip()
-                if line:
+                if line:  # Avoid empty lines
                     heapq.heappush(heap, (int(line), file_idx))
-    
+
     print('Chunks merged successfully!')
-    print_memory_usage()    
+    print_memory_usage()
     merge_time_end = time.time()
     current, peak = tracemalloc.get_traced_memory()
     peak_mb = peak / 1024 / 1024
-    details.append('merge memory usage: '+ str(peak_mb)+ 'MB')
-    details.append('merge time: '+str(round(merge_time_end - merge_time_start, 2))+ 'seconds')
+    details.append('merge memory usage: ' + str(peak_mb) + 'MB')
+    details.append('merge time: ' + str(round(merge_time_end - merge_time_start, 2)) + ' seconds')
     tracemalloc.stop()
 
 # Merge sort
@@ -89,8 +89,6 @@ def merge(left, right):
 
     return merged
 
-
-
 def print_memory_usage():
     current, peak = tracemalloc.get_traced_memory()
 
@@ -104,49 +102,44 @@ def print_memory_usage():
 
 def split_file():
     split_start = time.time()
-     # starting the monitoring
+    # starting the monitoring
     tracemalloc.start()
 
     print('Splitting file into chunks and sorting...')
-    
+
     print_memory_usage()
-    
+
     chunk_count = 0
     with open('unsorted.txt', 'r') as file:
         for line in file:
-            chunk.append(int(line))
+            line = line.strip()  # Avoid empty lines
+            if line:
+                chunk.append(int(line))
             if len(chunk) == number_of_lines_per_chunk:
-                # print('sorting chunk', chunk_count)
-                
                 sorted_chunk = merge_sort(chunk)
 
                 with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
                     for number in sorted_chunk:
                         chunk_file.write(str(number) + '\n')
                 chunk.clear()
-                sorted_chunk.clear()
-                # print('Chunk ' + str(chunk_count) + ' stored!')
                 chunk_count += 1
 
-                # print_memory_usage()
-    
     # Write any remaining lines in the last chunk
     if chunk:
+        sorted_chunk = merge_sort(chunk)  # Sort the remaining chunk
         with open('chunk' + str(chunk_count) + '.txt', 'w') as chunk_file:
-            for number in chunk:
+            for number in sorted_chunk:
                 chunk_file.write(str(number) + '\n')
         chunk.clear()
-        print('Chunk ' + str(chunk_count) + ' stored!')
         chunk_count += 1
-        
-        print_memory_usage()
 
-    # stopping the library
+    print_memory_usage()
+
     split_end = time.time()
     current, peak = tracemalloc.get_traced_memory()
     peak_mb = peak / 1024 / 1024
-    details.append('split memory usage: '+str(peak_mb)+ 'MB')
-    details.append('split time: '+ str(round(split_end - split_start, 2))+ 'seconds')
+    details.append('split memory usage: ' + str(peak_mb) + 'MB')
+    details.append('split time: ' + str(round(split_end - split_start, 2)) + ' seconds')
     tracemalloc.stop()
     return chunk_count
 
@@ -156,7 +149,7 @@ def delete_files(n_chunks):
         os.remove(file_name)
 
 def log_details(time_taken):
-    with open('details_merge'+str(chunk_size)+'.txt', 'w') as file:
+    with open('details_merge' + str(chunk_size) + '.txt', 'w') as file:
         file.write('Details:\n')
         file.write('---------------------------------------------\n')
         file.write('Chunk size: ' + str(chunk_size) + ' MB\n')
@@ -172,26 +165,19 @@ if __name__ == '__main__':
     start_time = time.time()
 
     # split file into chunks and sort individual chunks
-    
-    
     n_chunks = split_file()
-    
+
     print("---------------------------------------------")
-    print("")
     print('File split and chunks stored successfully!')
     print('Number of chunks: ' + str(n_chunks))
-    print("")
     print("---------------------------------------------")
 
-    
     print('Merging sorted chunks...')
 
     sorted_files = [f'chunk{i}.txt' for i in range(n_chunks)]
-    print(sorted_files)
     k_way_merge(sorted_files, 'sorted_merge.txt')
     delete_files(n_chunks)
 
     end_time = time.time()
     log_details(round(end_time - start_time, 2))
     print('Time elapsed: ' + str(round(end_time - start_time, 2)) + ' seconds')
-
